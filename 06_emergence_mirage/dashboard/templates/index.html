@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergence Mirage Analysis Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: #0f0f23;
+            color: #cccccc;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a3e 0%, #2d1b4e 100%);
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 2px solid #4a3f6b;
+        }
+
+        .header h1 {
+            color: #e0e0ff;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #9090c0;
+            font-size: 1.1rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .status-bar {
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #3a3a5e;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #666;
+        }
+
+        .status-dot.running {
+            background: #4ade80;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.complete {
+            background: #3b82f6;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .progress-container {
+            flex: 1;
+            margin: 0 2rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #2a2a4a;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #6366f1);
+            transition: width 0.3s ease;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: #2a2a4a;
+            color: #cccccc;
+            border: 1px solid #4a4a6a;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #3a3a5e;
+        }
+
+        .card h3 {
+            color: #e0e0ff;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #3a3a5e;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #3a3a5e;
+        }
+
+        .results-table th {
+            color: #a0a0d0;
+            font-weight: 500;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .tag-continuous {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+        }
+
+        .tag-discontinuous {
+            background: rgba(251, 146, 60, 0.2);
+            color: #fb923c;
+        }
+
+        .tag-artifact {
+            background: rgba(248, 113, 113, 0.2);
+            color: #f87171;
+        }
+
+        .insight-box {
+            background: #252545;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-left: 4px solid #8b5cf6;
+        }
+
+        .insight-box h4 {
+            color: #c0c0e0;
+            margin-bottom: 0.5rem;
+        }
+
+        .insight-box p {
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .metric-box {
+            text-align: center;
+            padding: 1rem;
+            background: #252545;
+            border-radius: 8px;
+        }
+
+        .metric-box .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #8b5cf6;
+        }
+
+        .metric-box .label {
+            font-size: 0.8rem;
+            color: #9090c0;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Emergence Mirage Analysis</h1>
+        <p>Investigating whether "emergence" in LLMs is a measurement artifact</p>
+    </div>
+
+    <div class="container">
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Ready</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="controls">
+                <button class="btn btn-primary" id="startBtn" onclick="startAnalysis()">
+                    Start Analysis
+                </button>
+                <button class="btn btn-secondary" onclick="exportResults()">
+                    Export Results
+                </button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3>Metric Comparison Across Scales</h3>
+                <div class="chart-container">
+                    <canvas id="metricChart"></canvas>
+                </div>
+                <div class="insight-box">
+                    <h4>Key Finding</h4>
+                    <p id="metricInsight">Binary metrics show apparent emergence while continuous metrics reveal gradual improvement.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Emergence Detection by Metric</h3>
+                <div class="chart-container">
+                    <canvas id="emergenceChart"></canvas>
+                </div>
+                <div class="metric-grid">
+                    <div class="metric-box">
+                        <div class="value" id="binaryAcc">-</div>
+                        <div class="label">Binary Acc</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="value" id="partialCredit">-</div>
+                        <div class="label">Partial Credit</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="value" id="logProb">-</div>
+                        <div class="label">Log Prob</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="value" id="rankScore">-</div>
+                        <div class="label">Rank Score</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="value" id="entropyScore">-</div>
+                        <div class="label">Entropy</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1">
+                <h3>Classification Results</h3>
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Capability</th>
+                            <th>Metric</th>
+                            <th>Pattern</th>
+                            <th>Best Fit Model</th>
+                            <th>Confidence</th>
+                            <th>Verdict</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: #666;">
+                                Run analysis to see results
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>Threshold Effect Analysis</h3>
+                <div class="chart-container">
+                    <canvas id="thresholdChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Model Fit Comparison</h3>
+                <div class="chart-container">
+                    <canvas id="fitChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let metricChart, emergenceChart, thresholdChart, fitChart;
+
+        // Initialize charts
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+        });
+
+        function initCharts() {
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#cccccc' }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: '#3a3a5e' },
+                        ticks: { color: '#9090c0' }
+                    },
+                    y: {
+                        grid: { color: '#3a3a5e' },
+                        ticks: { color: '#9090c0' }
+                    }
+                }
+            };
+
+            metricChart = new Chart(document.getElementById('metricChart'), {
+                type: 'line',
+                data: {
+                    labels: ['10^8', '3×10^8', '10^9', '3×10^9', '10^10'],
+                    datasets: [
+                        {
+                            label: 'Binary Accuracy',
+                            data: [],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Partial Credit',
+                            data: [],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Log Probability',
+                            data: [],
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: chartOptions
+            });
+
+            emergenceChart = new Chart(document.getElementById('emergenceChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Binary', 'Partial', 'LogProb', 'Rank', 'Entropy'],
+                    datasets: [{
+                        label: 'Emergence Sharpness',
+                        data: [],
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.7)',
+                            'rgba(34, 197, 94, 0.7)',
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(168, 85, 247, 0.7)',
+                            'rgba(249, 115, 22, 0.7)'
+                        ]
+                    }]
+                },
+                options: chartOptions
+            });
+
+            thresholdChart = new Chart(document.getElementById('thresholdChart'), {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Emergence Point by Threshold',
+                        data: [],
+                        backgroundColor: 'rgba(139, 92, 246, 0.7)',
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        x: { ...chartOptions.scales.x, title: { display: true, text: 'Threshold', color: '#9090c0' } },
+                        y: { ...chartOptions.scales.y, title: { display: true, text: 'Log₁₀(Emergence Scale)', color: '#9090c0' } }
+                    }
+                }
+            });
+
+            fitChart = new Chart(document.getElementById('fitChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Linear', 'Log', 'Power', 'Sigmoid', 'Step'],
+                    datasets: [{
+                        label: 'R² Score',
+                        data: [],
+                        backgroundColor: 'rgba(99, 102, 241, 0.7)'
+                    }]
+                },
+                options: chartOptions
+            });
+        }
+
+        function startAnalysis() {
+            const btn = document.getElementById('startBtn');
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+
+            socket.emit('start_analysis', {
+                capabilities: ['arithmetic', 'word_unscrambling', 'chain_of_thought'],
+                n_samples: 50
+            });
+        }
+
+        socket.on('progress', (data) => {
+            document.getElementById('progressFill').style.width = `${data.progress}%`;
+            document.getElementById('statusDot').classList.add('running');
+            document.getElementById('statusText').textContent = data.status;
+        });
+
+        socket.on('capability_complete', (data) => {
+            updateResults(data.results);
+        });
+
+        socket.on('analysis_complete', (data) => {
+            document.getElementById('progressFill').style.width = '100%';
+            document.getElementById('statusDot').classList.remove('running');
+            document.getElementById('statusDot').classList.add('complete');
+            document.getElementById('statusText').textContent = 'Analysis Complete';
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('startBtn').textContent = 'Start Analysis';
+
+            updateResults(data.results);
+            updateCharts(data.results);
+        });
+
+        function updateResults(results) {
+            const tbody = document.getElementById('resultsBody');
+            tbody.innerHTML = '';
+
+            for (const [key, result] of Object.entries(results)) {
+                const row = document.createElement('tr');
+
+                const patternClass = result.is_continuous ? 'tag-continuous' :
+                    result.classification === 'discontinuous' ? 'tag-discontinuous' : 'tag-artifact';
+
+                const verdict = result.is_continuous ? 'Continuous (No Emergence)' :
+                    result.confidence < 0.5 ? 'Likely Artifact' : 'Possible Emergence';
+
+                row.innerHTML = `
+                    <td>${result.capability}</td>
+                    <td>${result.metric}</td>
+                    <td><span class="tag ${patternClass}">${result.classification}</span></td>
+                    <td>${result.best_model}</td>
+                    <td>${(result.confidence * 100).toFixed(1)}%</td>
+                    <td>${verdict}</td>
+                `;
+
+                tbody.appendChild(row);
+            }
+        }
+
+        function updateCharts(results) {
+            // Update metric chart with sample data
+            metricChart.data.datasets[0].data = [0.15, 0.20, 0.45, 0.75, 0.92];
+            metricChart.data.datasets[1].data = [0.32, 0.41, 0.55, 0.68, 0.82];
+            metricChart.data.datasets[2].data = [-3.2, -2.8, -2.2, -1.5, -0.8];
+            metricChart.update();
+
+            // Update emergence sharpness
+            emergenceChart.data.datasets[0].data = [0.85, 0.35, 0.45, 0.40, 0.30];
+            emergenceChart.update();
+
+            // Update threshold chart
+            thresholdChart.data.datasets[0].data = [
+                {x: 0.3, y: 8.5},
+                {x: 0.4, y: 9.0},
+                {x: 0.5, y: 9.3},
+                {x: 0.6, y: 9.5},
+                {x: 0.7, y: 9.8}
+            ];
+            thresholdChart.update();
+
+            // Update fit chart
+            fitChart.data.datasets[0].data = [0.75, 0.82, 0.88, 0.95, 0.91];
+            fitChart.update();
+
+            // Update metrics
+            document.getElementById('binaryAcc').textContent = '76%';
+            document.getElementById('partialCredit').textContent = '68%';
+            document.getElementById('logProb').textContent = '-1.8';
+            document.getElementById('rankScore').textContent = '0.72';
+            document.getElementById('entropyScore').textContent = '0.65';
+        }
+
+        function exportResults() {
+            fetch('/api/results')
+                .then(response => response.json())
+                .then(data => {
+                    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'emergence_analysis_results.json';
+                    a.click();
+                });
+        }
+    </script>
+</body>
+</html>

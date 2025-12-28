@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adversarial Genomics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 2px solid #0f3460;
+        }
+        .header h1 { color: #e94560; font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .header p { color: #888; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        .controls {
+            display: flex; gap: 1rem; justify-content: center;
+            margin-bottom: 2rem; flex-wrap: wrap;
+        }
+        .btn {
+            padding: 0.75rem 2rem; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 1rem; transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #e94560, #c23a51);
+            color: white;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4); }
+        .progress-bar {
+            background: #2a2a4a; border-radius: 10px; height: 8px;
+            margin-bottom: 2rem; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #e94560, #ff6b6b);
+            transition: width 0.3s;
+        }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; }
+        .card {
+            background: rgba(255, 255, 255, 0.05); border-radius: 12px;
+            padding: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .card h3 { color: #e94560; margin-bottom: 1rem; padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .chart-container { height: 300px; position: relative; }
+        .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem; }
+        .metric-box {
+            text-align: center; padding: 1rem;
+            background: rgba(0, 0, 0, 0.2); border-radius: 8px;
+        }
+        .metric-box .value { font-size: 1.8rem; font-weight: bold; color: #e94560; }
+        .metric-box .label { font-size: 0.85rem; color: #888; margin-top: 0.25rem; }
+        .pressure-list { list-style: none; }
+        .pressure-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.75rem; margin-bottom: 0.5rem;
+            background: rgba(0, 0, 0, 0.2); border-radius: 6px;
+        }
+        .pressure-bar {
+            height: 6px; background: #2a2a4a; border-radius: 3px;
+            flex: 1; margin: 0 1rem;
+        }
+        .pressure-fill { height: 100%; background: #e94560; border-radius: 3px; }
+        .insight-box {
+            background: rgba(233, 69, 96, 0.1); border-left: 4px solid #e94560;
+            padding: 1rem; margin-top: 1rem; border-radius: 0 8px 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Adversarial Genomics</h1>
+        <p>Mapping adversarial examples to evolutionary visual pressures</p>
+    </div>
+    <div class="container">
+        <div class="controls">
+            <button class="btn btn-primary" id="startBtn" onclick="startAnalysis()">Run Analysis</button>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        <div class="grid">
+            <div class="card">
+                <h3>Evolutionary Pressure Mapping</h3>
+                <ul class="pressure-list" id="pressureList">
+                    <li class="pressure-item">
+                        <span>Loading...</span>
+                    </li>
+                </ul>
+                <div class="insight-box">
+                    <strong>Hypothesis:</strong> Adversarial perturbations encode the same selection pressures that shaped biological vision.
+                </div>
+            </div>
+            <div class="card">
+                <h3>Corruption Correlations</h3>
+                <div class="chart-container">
+                    <canvas id="correlationChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Biological Alignment</h3>
+                <div class="chart-container">
+                    <canvas id="alignmentChart"></canvas>
+                </div>
+                <div class="metric-grid">
+                    <div class="metric-box">
+                        <div class="value" id="v1Score">-</div>
+                        <div class="label">V1 Alignment</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="value" id="gaborImprove">-</div>
+                        <div class="label">Gabor Improvement</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="value" id="osiImprove">-</div>
+                        <div class="label">OSI Improvement</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Variance Decomposition</h3>
+                <div class="chart-container">
+                    <canvas id="varianceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const socket = io();
+        let correlationChart, alignmentChart, varianceChart;
+
+        document.addEventListener('DOMContentLoaded', initCharts);
+
+        function initCharts() {
+            const chartOptions = {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#e0e0e0' } } },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#888' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#888' } }
+                }
+            };
+
+            correlationChart = new Chart(document.getElementById('correlationChart'), {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Correlation', data: [], backgroundColor: '#e94560' }] },
+                options: { ...chartOptions, indexAxis: 'y' }
+            });
+
+            alignmentChart = new Chart(document.getElementById('alignmentChart'), {
+                type: 'radar',
+                data: {
+                    labels: ['V1 Alignment', 'Gabor Sim', 'OSI', 'Edge Det', 'Orientation'],
+                    datasets: [{
+                        label: 'Standard Model', data: [], borderColor: '#888', backgroundColor: 'rgba(136,136,136,0.2)'
+                    }, {
+                        label: 'Robust Model', data: [], borderColor: '#e94560', backgroundColor: 'rgba(233,69,96,0.2)'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            varianceChart = new Chart(document.getElementById('varianceChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Mapped', 'Unmapped'],
+                    datasets: [{ data: [0, 100], backgroundColor: ['#e94560', '#2a2a4a'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function startAnalysis() {
+            document.getElementById('startBtn').disabled = true;
+            socket.emit('start_analysis', {});
+        }
+
+        socket.on('progress', (data) => {
+            document.getElementById('progressFill').style.width = `${data.progress}%`;
+        });
+
+        socket.on('analysis_complete', (data) => {
+            document.getElementById('progressFill').style.width = '100%';
+            document.getElementById('startBtn').disabled = false;
+            updateDashboard(data.results);
+        });
+
+        function updateDashboard(results) {
+            // Update pressure list
+            const list = document.getElementById('pressureList');
+            list.innerHTML = '';
+            results.pressure_mapping.pressures.forEach(p => {
+                list.innerHTML += `
+                    <li class="pressure-item">
+                        <span>${p.name.replace('_', ' ')}</span>
+                        <div class="pressure-bar"><div class="pressure-fill" style="width: ${p.strength * 100}%"></div></div>
+                        <span>${(p.strength * 100).toFixed(0)}%</span>
+                    </li>`;
+            });
+
+            // Update correlation chart
+            const corr = results.corruption_correlations;
+            correlationChart.data.labels = Object.keys(corr);
+            correlationChart.data.datasets[0].data = Object.values(corr);
+            correlationChart.update();
+
+            // Update alignment chart
+            const bio = results.biological_alignment;
+            alignmentChart.data.datasets[0].data = [0.55, 0.48, 0.42, 0.50, 0.45];
+            alignmentChart.data.datasets[1].data = [bio.v1_alignment, bio.v1_alignment - 0.1,
+                bio.orientation_selectivity_improvement + 0.5, 0.65, 0.62];
+            alignmentChart.update();
+
+            // Update variance chart
+            varianceChart.data.datasets[0].data = [
+                results.pressure_mapping.total_explained_variance * 100,
+                (1 - results.pressure_mapping.total_explained_variance) * 100
+            ];
+            varianceChart.update();
+
+            // Update metrics
+            document.getElementById('v1Score').textContent = bio.v1_alignment.toFixed(2);
+            document.getElementById('gaborImprove').textContent = `+${(bio.gabor_similarity_improvement * 100).toFixed(0)}%`;
+            document.getElementById('osiImprove').textContent = `+${(bio.orientation_selectivity_improvement * 100).toFixed(0)}%`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+experiment:
+  name: "bitter_lesson_analysis"
+  description: "Testing whether scale alone is sufficient"
+  version: "1.0.0"
+
+models:
+  simple_scaled:
+    - name: "mlp_small"
+      parameters: 1000000
+    - name: "mlp_large"
+      parameters: 100000000
+  specialized:
+    - name: "cnn"
+      domain: "vision"
+    - name: "rnn"
+      domain: "sequence"
+    - name: "graph_nn"
+      domain: "relational"
+
+tasks:
+  scale_sensitive:
+    - "language_modeling"
+    - "question_answering"
+  architecture_sensitive:
+    - "physical_reasoning"
+    - "graph_reasoning"
+    - "spatial_navigation"
+
+analysis:
+  compare:
+    - "flops_matched"
+    - "parameter_matched"
+    - "sample_efficiency"
+
+output:
+  results_dir: "results"
+
+dashboard:
+  host: "0.0.0.0"
+  port: 5010
+  debug: false

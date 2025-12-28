@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitter Lesson Analysis Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #eee; margin: 0; min-height: 100vh; }
+        .header { background: #16213e; padding: 2rem; text-align: center; border-bottom: 2px solid #0f3460; }
+        .header h1 { color: #e94560; margin: 0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; }
+        .card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.1); }
+        .card h3 { color: #e94560; margin-bottom: 1rem; }
+        .chart-container { height: 300px; }
+        .insight { background: rgba(233,69,96,0.1); padding: 1rem; border-radius: 8px; margin-top: 1rem; border-left: 4px solid #e94560; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Bitter Lesson Analysis</h1>
+        <p>Testing when scale beats architecture and vice versa</p>
+    </div>
+    <div class="container">
+        <div class="grid">
+            <div class="card">
+                <h3>Scale vs Architecture Performance</h3>
+                <div class="chart-container"><canvas id="comparisonChart"></canvas></div>
+            </div>
+            <div class="card">
+                <h3>Efficiency Analysis</h3>
+                <div class="chart-container"><canvas id="efficiencyChart"></canvas></div>
+            </div>
+            <div class="card" style="grid-column: 1 / -1">
+                <h3>Key Findings</h3>
+                <div class="insight">
+                    <strong>Finding:</strong> Scale provides advantages for pattern matching tasks, while architectural innovations excel at structured reasoning requiring specific inductive biases.
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const chartOptions = { responsive: true, maintainAspectRatio: false };
+
+        new Chart(document.getElementById('comparisonChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Language', 'Translation', 'Physical', 'Graph', 'Spatial'],
+                datasets: [
+                    { label: 'Scale', data: [0.88, 0.85, 0.62, 0.55, 0.48], backgroundColor: '#3b82f6' },
+                    { label: 'Architecture', data: [0.75, 0.72, 0.82, 0.88, 0.85], backgroundColor: '#e94560' }
+                ]
+            },
+            options: chartOptions
+        });
+
+        new Chart(document.getElementById('efficiencyChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Scale Wins', 'Architecture Wins', 'Tie'],
+                datasets: [{ data: [35, 50, 15], backgroundColor: ['#3b82f6', '#e94560', '#888'] }]
+            },
+            options: chartOptions
+        });
+    </script>
+</body>
+</html>

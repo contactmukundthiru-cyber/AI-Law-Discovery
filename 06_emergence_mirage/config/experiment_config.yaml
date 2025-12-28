@@ -1,0 +1,74 @@
+experiment:
+  name: "emergence_mirage_analysis"
+  description: "Investigating emergence as measurement artifact"
+  version: "1.0.0"
+
+models:
+  # Test across multiple model scales
+  scales:
+    - name: "small"
+      model_id: "gpt2"
+      parameters: 124000000
+    - name: "medium"
+      model_id: "gpt2-medium"
+      parameters: 355000000
+    - name: "large"
+      model_id: "gpt2-large"
+      parameters: 774000000
+    - name: "xl"
+      model_id: "gpt2-xl"
+      parameters: 1500000000
+
+capabilities:
+  # Capabilities traditionally showing emergence
+  tested:
+    - name: "arithmetic"
+      description: "Multi-digit arithmetic operations"
+      claimed_emergence_scale: 1e10
+    - name: "chain_of_thought"
+      description: "Step-by-step reasoning"
+      claimed_emergence_scale: 1e11
+    - name: "word_unscrambling"
+      description: "Unscramble anagram words"
+      claimed_emergence_scale: 1e10
+    - name: "truthfulness"
+      description: "Factual accuracy vs. plausible falsehoods"
+      claimed_emergence_scale: 1e11
+
+metrics:
+  types:
+    - name: "binary"
+      description: "Exact match correctness"
+    - name: "partial_credit"
+      description: "Character/token level partial matching"
+    - name: "probability"
+      description: "Log probability of correct answer"
+    - name: "entropy"
+      description: "Prediction entropy reduction"
+    - name: "rank"
+      description: "Rank of correct answer in distribution"
+
+analysis:
+  curve_fitting:
+    models:
+      - "linear"
+      - "logarithmic"
+      - "sigmoid"
+      - "step_function"
+      - "power_law"
+  statistical_tests:
+    - "discontinuity_detection"
+    - "smoothness_test"
+    - "breakpoint_analysis"
+  n_bootstrap: 1000
+  confidence_level: 0.95
+
+output:
+  results_dir: "results"
+  save_raw_predictions: true
+  save_probability_distributions: true
+
+dashboard:
+  host: "0.0.0.0"
+  port: 5006
+  debug: false

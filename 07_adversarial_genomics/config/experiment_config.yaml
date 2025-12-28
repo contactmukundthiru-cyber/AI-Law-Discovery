@@ -1,0 +1,62 @@
+experiment:
+  name: "adversarial_genomics"
+  description: "Mapping adversarial examples to evolutionary pressures"
+  version: "1.0.0"
+
+models:
+  architectures:
+    - name: "resnet50"
+      pretrained: true
+    - name: "resnet50_robust"
+      pretrained: true
+      source: "robustbench"
+    - name: "vit_base"
+      pretrained: true
+
+adversarial:
+  attacks:
+    - name: "pgd"
+      epsilon: 0.03
+      steps: 40
+      step_size: 0.01
+    - name: "fgsm"
+      epsilon: 0.03
+    - name: "cw"
+      confidence: 0
+      steps: 1000
+
+  analysis:
+    n_samples: 1000
+    random_seed: 42
+
+environmental_pressures:
+  categories:
+    - name: "lighting"
+      corruptions: ["brightness", "contrast", "shadows"]
+    - name: "weather"
+      corruptions: ["fog", "rain", "snow"]
+    - name: "motion"
+      corruptions: ["blur", "defocus", "zoom"]
+    - name: "occlusion"
+      corruptions: ["partial", "camouflage", "clutter"]
+    - name: "depth"
+      corruptions: ["perspective", "scale", "distance"]
+
+biological_reference:
+  v1_features:
+    - "gabor_filters"
+    - "edge_detection"
+    - "orientation_selectivity"
+  primate_data:
+    source: "brainscore"
+    regions: ["V1", "V2", "V4", "IT"]
+
+output:
+  results_dir: "results"
+  save_perturbations: true
+  save_feature_maps: true
+
+dashboard:
+  host: "0.0.0.0"
+  port: 5007
+  debug: false
