@@ -1,0 +1,267 @@
+/* Inverse Scaling Dashboard Styles */
+
+:root {
+    --primary-color: #2E86AB;
+    --secondary-color: #A23B72;
+    --success-color: #2ECC71;
+    --danger-color: #E74C3C;
+    --warning-color: #F39C12;
+    --info-color: #3498DB;
+    --dark-color: #2C3E50;
+    --light-color: #ECF0F1;
+}
+
+body {
+    background-color: #f5f6fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.navbar-brand i {
+    margin-right: 8px;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 8px;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+    font-weight: 600;
+}
+
+.card-header i {
+    margin-right: 8px;
+    color: var(--primary-color);
+}
+
+/* Model and Dataset Lists */
+.model-item, .dataset-item {
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.model-item:hover, .dataset-item:hover {
+    background-color: #e9ecef;
+}
+
+.model-item.disabled {
+    opacity: 0.5;
+}
+
+.model-badge {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+}
+
+/* Progress Card */
+#progress-card {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(46, 134, 171, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(46, 134, 171, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(46, 134, 171, 0); }
+}
+
+.progress {
+    border-radius: 10px;
+}
+
+.progress-bar {
+    background-color: var(--primary-color);
+}
+
+/* Tables */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Status Badges */
+.status-pending { background-color: var(--warning-color); }
+.status-running { background-color: var(--info-color); }
+.status-completed { background-color: var(--success-color); }
+.status-failed { background-color: var(--danger-color); }
+.status-cancelled { background-color: #95a5a6; }
+
+/* Tabs */
+.nav-tabs .nav-link {
+    color: var(--dark-color);
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: transparent;
+    border-bottom-color: var(--primary-color);
+}
+
+.nav-tabs .nav-link.active {
+    border-color: transparent;
+    border-bottom: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.nav-tabs .nav-link i {
+    margin-right: 4px;
+}
+
+/* Tab Content */
+.tab-content {
+    background-color: #fff;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Plots */
+#results-plot, #analysis-plot {
+    background-color: #fff;
+    border-radius: 4px;
+}
+
+/* Action Buttons */
+.btn-action {
+    padding: 2px 8px;
+    font-size: 0.8rem;
+}
+
+/* Analysis Summary */
+#analysis-summary {
+    font-size: 0.9rem;
+}
+
+#analysis-summary .metric {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+#analysis-summary .metric:last-child {
+    border-bottom: none;
+}
+
+#analysis-summary .metric-value {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* Modal */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+}
+
+.modal-header {
+    border-bottom: 1px solid #eee;
+}
+
+/* Form Controls */
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(46, 134, 171, 0.25);
+}
+
+/* Checkbox Grid */
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+}
+
+.form-check {
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+/* Loading States */
+.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 10px;
+    }
+
+    .card {
+        margin-bottom: 10px;
+    }
+}
+
+/* Inverse Scaling Indicators */
+.inverse-scaling-detected {
+    color: var(--danger-color);
+    font-weight: 600;
+}
+
+.positive-scaling {
+    color: var(--success-color);
+}
+
+.neutral-scaling {
+    color: var(--warning-color);
+}
+
+/* Tooltips */
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    background-color: var(--dark-color);
+    color: #fff;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 1000;
+}

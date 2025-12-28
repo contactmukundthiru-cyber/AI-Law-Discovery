@@ -1,0 +1,62 @@
+# Physics Simulator Experiment Configuration
+
+experiment:
+  name: "physics_simulator_study"
+  version: "1.0.0"
+  seed: 42
+  output_dir: "results"
+
+models:
+  huggingface:
+    - name: "gpt2"
+      layers_to_probe: [0, 3, 6, 9, 11]
+    - name: "gpt2-medium"
+      layers_to_probe: [0, 6, 12, 18, 23]
+    - name: "gpt2-large"
+      layers_to_probe: [0, 9, 18, 27, 35]
+
+probing:
+  physical_variables:
+    - spatial_distance
+    - spatial_direction
+    - temporal_order
+    - temporal_duration
+    - causal_direction
+    - object_permanence
+
+  probe_types:
+    - linear
+    - mlp_1layer
+
+  training:
+    epochs: 50
+    learning_rate: 0.001
+    batch_size: 32
+    validation_split: 0.2
+
+physics_tasks:
+  trajectory_prediction:
+    enabled: true
+    num_samples: 1000
+  collision_prediction:
+    enabled: true
+    num_samples: 1000
+  temporal_ordering:
+    enabled: true
+    num_samples: 1000
+  causal_reasoning:
+    enabled: true
+    num_samples: 1000
+
+analysis:
+  statistical_tests:
+    - permutation_test
+    - bootstrap_ci
+  visualization:
+    - probe_accuracy_heatmap
+    - layer_comparison
+    - variable_encoding_strength
+
+dashboard:
+  host: "0.0.0.0"
+  port: 5002

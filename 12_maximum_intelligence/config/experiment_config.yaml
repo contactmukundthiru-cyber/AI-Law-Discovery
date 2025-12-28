@@ -1,0 +1,28 @@
+# maximum_intelligence Experiment Configuration
+
+experiment:
+  name: "maximum_intelligence_study"
+  version: "1.0.0"
+  seed: 42
+  output_dir: "results"
+
+models:
+  huggingface:
+    - name: "gpt2"
+      enabled: true
+    - name: "gpt2-medium"
+      enabled: true
+
+training:
+  epochs: 50
+  learning_rate: 0.001
+  batch_size: 32
+
+analysis:
+  statistical_tests:
+    - permutation_test
+    - bootstrap_ci
+
+dashboard:
+  host: "0.0.0.0"
+  port: 5012
